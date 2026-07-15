@@ -1,0 +1,300 @@
+{
+  "info": {
+    "_postman_id": "semana8-hateoas-evidencia",
+    "name": "Semana 8 — HATEOAS HAL (Producto, Carrito, Inventario, Usuario)",
+    "description": "Semana 8 — 9 evidencias HATEOAS (H01–H09) con paginación y validación de _links / _embedded.\n\n**Orden de ejecución:**\n1. Importar environment: `S8_03_Environment_local.json`\n2. Ejecutar S00, S00b, S00c (logins)\n3. Ejecutar H01–H09 (**H05 antes de H04**)\n\nCada request incluye una descripción con la respuesta esperada. Después de **Send**, revisa la pestaña **Body** (JSON) y **Test Results** (validaciones automáticas).\n\nOpenAPI: `S8_01_OpenAPI_importar.json` | Consistencia: `S8_CONSISTENCIA_swagger_postman.md`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "tokenGerente", "value": "" },
+    { "key": "tokenCliente", "value": "" },
+    { "key": "tokenEmpleado", "value": "" },
+    { "key": "productoId", "value": "1" },
+    { "key": "clienteId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "S00 — Login GERENTE → 200 OK",
+      "description": "**Qué hace:** Inicia sesión como gerente (`gerente1`) para obtener un JWT.\n\n**Código HTTP esperado: 200 OK**\n\n**Body JSON:**\n```json\n{\n  \"accessToken\": \"eyJ...\",\n  \"refreshToken\": \"...\",\n  \"type\": \"Bearer\",\n  \"expiresIn\": 3600,\n  \"username\": \"gerente1\",\n  \"roles\": [\"GERENTE\"]\n}\n```\n\n**Importante:** El test guarda `accessToken` en la variable `tokenGerente` del environment. Ese token se usa en H03, H08 y H09.",
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('Login gerente → 200 OK', () => pm.response.to.have.status(200));",
+            "pm.collectionVariables.set('tokenGerente', pm.response.json().accessToken);"
+          ],
+          "type": "text/javascript"
+        }
+      }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"username\":\"gerente1\",\"password\":\"gerente123\"}" },
+        "url": "{{baseUrl}}/api/auth/login",
+        "description": "Login GERENTE → 200 OK | guarda tokenGerente"
+      }
+    },
+    {
+      "name": "S00b — Login CLIENTE → 200 OK",
+      "description": "**Qué hace:** Inicia sesión como cliente (`cliente1`) para obtener un JWT.\n\n**Código HTTP esperado: 200 OK**\n\n**Body JSON:** Igual que S00, con `username: \"cliente1\"` y `roles: [\"CLIENTE\"]`.\n\n**Importante:** El test guarda `accessToken` en `tokenCliente`. Se usa en H05 y H04 (carrito).",
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('Login cliente → 200 OK', () => pm.response.to.have.status(200));",
+            "pm.collectionVariables.set('tokenCliente', pm.response.json().accessToken);"
+          ],
+          "type": "text/javascript"
+        }
+      }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"username\":\"cliente1\",\"password\":\"cliente123\"}" },
+        "url": "{{baseUrl}}/api/auth/login",
+        "description": "Login CLIENTE → 200 OK | guarda tokenCliente"
+      }
+    },
+    {
+      "name": "S00c — Login EMPLEADO → 200 OK",
+      "description": "**Qué hace:** Inicia sesión como empleado (`empleado1`) para obtener un JWT.\n\n**Código HTTP esperado: 200 OK**\n\n**Body JSON:** Igual que S00, con `username: \"empleado1\"` y `roles: [\"EMPLEADO\"]`.\n\n**Importante:** El test guarda `accessToken` en `tokenEmpleado`. Se usa en H06 y H07 (inventario).",
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('Login empleado → 200 OK', () => pm.response.to.have.status(200));",
+            "pm.collectionVariables.set('tokenEmpleado', pm.response.json().accessToken);"
+          ],
+          "type": "text/javascript"
+        }
+      }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"username\":\"empleado1\",\"password\":\"empleado123\"}" },
+        "url": "{{baseUrl}}/api/auth/login",
+        "description": "Login EMPLEADO → 200 OK | guarda tokenEmpleado"
+      }
+    },
+    {
+      "name": "H01 GET productos paginado (público) → 200 OK",
+      "description": "**Qué hace:** Lista productos con paginación. **No requiere login** (endpoint público).\n\n**URL:** `GET /api/productos?page=0&size=5`\n\n**Código HTTP esperado: 200 OK** — JSON en formato **HAL** (Hypermedia):\n\n```json\n{\n  \"_embedded\": {\n    \"productoResponseDTOList\": [\n      { \"id\": 1, \"nombre\": \"...\", \"precio\": 990, \"stock\": 10, \"_links\": { \"self\": { \"href\": \"...\" } } }\n    ]\n  },\n  \"page\": {\n    \"size\": 5,\n    \"totalElements\": 20,\n    \"totalPages\": 4,\n    \"number\": 0\n  },\n  \"_links\": {\n    \"self\": { \"href\": \"http://localhost:8080/api/productos?page=0&size=5\" },\n    \"next\": { \"href\": \"...\" }\n  }\n}\n```\n\n**Validar:** `_embedded`, `page.size = 5`, `_links.self`.",
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('H01 → 200 OK', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('H01 _embedded', () => pm.expect(j._embedded).to.exist);",
+            "pm.test('H01 page.size=5', () => pm.expect(j.page.size).to.eql(5));",
+            "pm.test('H01 _links.self', () => pm.expect(j._links.self.href).to.be.a('string'));"
+          ],
+          "type": "text/javascript"
+        }
+      }],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/productos?page=0&size=5",
+        "description": "H01 GET productos paginado → 200 OK (HAL)"
+      }
+    },
+    {
+      "name": "H02 GET producto por id (público) → 200 OK",
+      "description": "**Qué hace:** Obtiene **un producto** por su ID. **No requiere login**.\n\n**URL:** `GET /api/productos/{{productoId}}` (por defecto id=1)\n\n**Código HTTP esperado: 200 OK** — Un solo producto con enlaces HATEOAS:\n\n```json\n{\n  \"id\": 1,\n  \"nombre\": \"Arroz grano largo 1kg\",\n  \"precio\": 1890,\n  \"stock\": 10,\n  \"descripcion\": \"...\",\n  \"categoria\": { \"id\": 1, \"nombre\": \"Abarrotes\" },\n  \"_links\": {\n    \"self\": { \"href\": \"http://localhost:8080/api/productos/1\" },\n    \"productos\": { \"href\": \"http://localhost:8080/api/productos\" },\n    \"categoria\": { \"href\": \"...\" }\n  }\n}\n```\n\n**Validar:** `_links.self` y `_links.productos`.",
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('H02 → 200 OK', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('H02 _links.self', () => pm.expect(j._links.self.href).to.include('/api/productos/'));",
+            "pm.test('H02 _links.productos', () => pm.expect(j._links.productos.href).to.include('/api/productos'));"
+          ],
+          "type": "text/javascript"
+        }
+      }],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/productos/{{productoId}}",
+        "description": "H02 GET producto por id → 200 OK (HAL)"
+      }
+    },
+    {
+      "name": "H03 POST producto (GERENTE) → 200 OK",
+      "description": "**Qué hace:** Crea un producto nuevo. **Requiere JWT de GERENTE** (ejecutar S00 antes).\n\n**URL:** `POST /api/productos`\n\n**Código HTTP esperado: 200 OK** — Producto creado en formato HAL:\n\n```json\n{\n  \"id\": 25,\n  \"nombre\": \"Producto HATEOAS S8\",\n  \"precio\": 1200,\n  \"stock\": 5,\n  \"descripcion\": \"Evidencia Postman S8\",\n  \"categoria\": { \"id\": 1, \"nombre\": \"...\" },\n  \"_links\": {\n    \"self\": { \"href\": \"http://localhost:8080/api/productos/25\" },\n    \"productos\": { \"href\": \"http://localhost:8080/api/productos\" }\n  }\n}\n```\n\n**Validar:** `id` numérico y `_links.self`. Si falta token → **401** o **403**.",
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('H03 → 200 OK', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('H03 _links.self', () => pm.expect(j._links.self.href).to.be.a('string'));",
+            "pm.test('H03 id', () => pm.expect(j.id).to.be.a('number'));"
+          ],
+          "type": "text/javascript"
+        }
+      }],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenGerente}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"nombre\":\"Producto HATEOAS S8\",\"precio\":1200,\"stock\":5,\"descripcion\":\"Evidencia Postman S8\",\"categoria\":{\"id\":1}}"
+        },
+        "url": "{{baseUrl}}/api/productos",
+        "description": "H03 POST producto → 200 OK (GERENTE) | sin token: 401/403"
+      }
+    },
+    {
+      "name": "H05 POST carrito (CLIENTE) → 200 OK",
+      "description": "**Qué hace:** Agrega un producto al carrito del cliente. **Requiere JWT de CLIENTE** (S00b).\n\n**URL:** `POST /api/carrito`\n\n**⚠ Ejecutar ANTES de H04** para que el carrito tenga items y H04 muestre `_embedded`.\n\n**Código HTTP esperado: 200 OK** — Item de carrito con HAL:\n\n```json\n{\n  \"id\": 3,\n  \"usuario\": { \"id\": 1, \"username\": \"cliente1\", \"...\": \"...\" },\n  \"producto\": { \"id\": 1, \"nombre\": \"...\", \"precio\": 990 },\n  \"cantidad\": 1,\n  \"_links\": {\n    \"self\": { \"href\": \"http://localhost:8080/api/carrito/3\" },\n    \"carrito\": { \"href\": \"http://localhost:8080/api/carrito\" },\n    \"usuario\": { \"href\": \"...\" },\n    \"producto\": { \"href\": \"...\" }\n  }\n}\n```\n\n**Validar:** `_links.self` y `_links.carrito`.",
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('H05 → 200 OK', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('H05 _links.self', () => pm.expect(j._links.self.href).to.be.a('string'));",
+            "pm.test('H05 _links.carrito', () => pm.expect(j._links.carrito.href).to.include('/api/carrito'));"
+          ],
+          "type": "text/javascript"
+        }
+      }],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenCliente}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"usuario\":{\"id\":{{clienteId}}},\"producto\":{\"id\":{{productoId}}},\"cantidad\":1}"
+        },
+        "url": "{{baseUrl}}/api/carrito",
+        "description": "H05 POST carrito → 200 OK (CLIENTE) | ejecutar antes de H04"
+      }
+    },
+    {
+      "name": "H04 GET carrito paginado (CLIENTE) → 200 OK",
+      "description": "**Qué hace:** Lista los items del carrito con paginación. **Requiere JWT de CLIENTE**.\n\n**URL:** `GET /api/carrito?page=0&size=5`\n\n**⚠ Ejecutar DESPUÉS de H05.** Si el carrito está vacío, puede no traer `_embedded`.\n\n**Código HTTP esperado: 200 OK** — Lista HAL paginada:\n\n```json\n{\n  \"_embedded\": {\n    \"carritoResponseDTOList\": [\n      { \"id\": 1, \"cantidad\": 1, \"producto\": { \"...\": \"...\" }, \"_links\": { \"self\": { \"href\": \"...\" } } }\n    ]\n  },\n  \"page\": { \"size\": 5, \"totalElements\": 1, \"totalPages\": 1, \"number\": 0 },\n  \"_links\": { \"self\": { \"href\": \"http://localhost:8080/api/carrito?page=0&size=5\" } }\n}\n```\n\n**Validar:** `_embedded`, `page` y `_links.self`.",
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('H04 → 200 OK', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('H04 _embedded', () => pm.expect(j._embedded).to.exist);",
+            "pm.test('H04 page', () => pm.expect(j.page).to.exist);",
+            "pm.test('H04 _links.self', () => pm.expect(j._links.self.href).to.be.a('string'));"
+          ],
+          "type": "text/javascript"
+        }
+      }],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" }],
+        "url": "{{baseUrl}}/api/carrito?page=0&size=5",
+        "description": "H04 GET carrito paginado → 200 OK (CLIENTE) | ejecutar después de H05"
+      }
+    },
+    {
+      "name": "H06 GET inventario paginado (EMPLEADO) → 200 OK",
+      "description": "**Qué hace:** Lista movimientos de inventario (entradas/salidas) paginados. **Requiere JWT de EMPLEADO** (S00c).\n\n**URL:** `GET /api/inventario?page=0&size=5`\n\n**Código HTTP esperado: 200 OK** — Lista HAL:\n\n```json\n{\n  \"_embedded\": {\n    \"inventarioResponseDTOList\": [\n      {\n        \"id\": 1,\n        \"producto\": { \"id\": 1, \"nombre\": \"...\" },\n        \"cantidad\": 10,\n        \"tipoMovimiento\": \"Entrada\",\n        \"fechaMovimiento\": \"2026-07-12T...\",\n        \"_links\": { \"self\": { \"href\": \"...\" } }\n      }\n    ]\n  },\n  \"page\": { \"size\": 5, \"totalElements\": 15, \"totalPages\": 3, \"number\": 0 },\n  \"_links\": { \"self\": { \"href\": \"...\" } }\n}\n```\n\n**Validar:** `_embedded` y `page.totalElements` numérico.",
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('H06 → 200 OK', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('H06 _embedded', () => pm.expect(j._embedded).to.exist);",
+            "pm.test('H06 page.totalElements', () => pm.expect(j.page.totalElements).to.be.a('number'));"
+          ],
+          "type": "text/javascript"
+        }
+      }],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenEmpleado}}" }],
+        "url": "{{baseUrl}}/api/inventario?page=0&size=5",
+        "description": "H06 GET inventario paginado → 200 OK (EMPLEADO)"
+      }
+    },
+    {
+      "name": "H07 POST inventario (EMPLEADO) → 200 OK",
+      "description": "**Qué hace:** Registra un movimiento de inventario (Entrada o Salida). **Requiere JWT de EMPLEADO**.\n\n**URL:** `POST /api/inventario`\n\n**Body enviado:** producto id=1, cantidad=2, tipoMovimiento=\"Entrada\"\n\n**Código HTTP esperado: 200 OK** — Movimiento creado con HAL:\n\n```json\n{\n  \"id\": 10,\n  \"producto\": { \"id\": 1, \"nombre\": \"...\", \"stock\": 12 },\n  \"cantidad\": 2,\n  \"tipoMovimiento\": \"Entrada\",\n  \"fechaMovimiento\": \"2026-07-12T17:30:00\",\n  \"_links\": {\n    \"self\": { \"href\": \"http://localhost:8080/api/inventario/10\" },\n    \"inventario\": { \"href\": \"http://localhost:8080/api/inventario\" },\n    \"producto\": { \"href\": \"...\" }\n  }\n}\n```\n\n**Validar:** `_links.self` y `_links.inventario`.",
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('H07 → 200 OK', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('H07 _links.self', () => pm.expect(j._links.self.href).to.be.a('string'));",
+            "pm.test('H07 _links.inventario', () => pm.expect(j._links.inventario.href).to.include('/api/inventario'));"
+          ],
+          "type": "text/javascript"
+        }
+      }],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenEmpleado}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"producto\":{\"id\":{{productoId}}},\"cantidad\":2,\"tipoMovimiento\":\"Entrada\"}"
+        },
+        "url": "{{baseUrl}}/api/inventario",
+        "description": "H07 POST inventario → 200 OK (EMPLEADO)"
+      }
+    },
+    {
+      "name": "H08 GET usuarios paginado (GERENTE) → 200 OK",
+      "description": "**Qué hace:** Lista usuarios del sistema con paginación. **Solo GERENTE** (S00).\n\n**URL:** `GET /api/usuarios?page=0&size=5`\n\n**Código HTTP esperado: 200 OK** — Lista HAL:\n\n```json\n{\n  \"_embedded\": {\n    \"usuarioResponseDTOList\": [\n      {\n        \"id\": 1,\n        \"username\": \"cliente1\",\n        \"nombre\": \"Cliente\",\n        \"email\": \"cliente1@minimarket.cl\",\n        \"roles\": [{ \"id\": 1, \"nombre\": \"CLIENTE\" }],\n        \"_links\": { \"self\": { \"href\": \"...\" } }\n      }\n    ]\n  },\n  \"page\": { \"size\": 5, \"totalElements\": 8, \"totalPages\": 2, \"number\": 0 },\n  \"_links\": { \"self\": { \"href\": \"...\" } }\n}\n```\n\n**Validar:** `_embedded` y `page.size = 5`. Sin token de gerente → **403**.",
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('H08 → 200 OK', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('H08 _embedded', () => pm.expect(j._embedded).to.exist);",
+            "pm.test('H08 page.size=5', () => pm.expect(j.page.size).to.eql(5));"
+          ],
+          "type": "text/javascript"
+        }
+      }],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenGerente}}" }],
+        "url": "{{baseUrl}}/api/usuarios?page=0&size=5",
+        "description": "H08 GET usuarios paginado → 200 OK (GERENTE) | sin token: 401/403"
+      }
+    },
+    {
+      "name": "H09 GET usuario por id (GERENTE) → 200 OK",
+      "description": "**Qué hace:** Obtiene **un usuario** por ID. **Solo GERENTE**.\n\n**URL:** `GET /api/usuarios/{{clienteId}}` (por defecto id=1)\n\n**Código HTTP esperado: 200 OK** — Usuario individual con HAL:\n\n```json\n{\n  \"id\": 1,\n  \"username\": \"cliente1\",\n  \"nombre\": \"Cliente\",\n  \"apellido\": \"Demo\",\n  \"email\": \"cliente1@minimarket.cl\",\n  \"direccion\": \"...\",\n  \"roles\": [{ \"id\": 1, \"nombre\": \"CLIENTE\" }],\n  \"mfaEnabled\": false,\n  \"_links\": {\n    \"self\": { \"href\": \"http://localhost:8080/api/usuarios/1\" },\n    \"usuarios\": { \"href\": \"http://localhost:8080/api/usuarios\" }\n  }\n}\n```\n\n**Validar:** `_links.self` (contiene `/api/usuarios/`) y `_links.usuarios`.",
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('H09 → 200 OK', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('H09 _links.self', () => pm.expect(j._links.self.href).to.include('/api/usuarios/'));",
+            "pm.test('H09 _links.usuarios', () => pm.expect(j._links.usuarios.href).to.include('/api/usuarios'));"
+          ],
+          "type": "text/javascript"
+        }
+      }],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenGerente}}" }],
+        "url": "{{baseUrl}}/api/usuarios/{{clienteId}}",
+        "description": "H09 GET usuario por id → 200 OK (GERENTE) | sin token: 401/403"
+      }
+    }
+  ]
+}
