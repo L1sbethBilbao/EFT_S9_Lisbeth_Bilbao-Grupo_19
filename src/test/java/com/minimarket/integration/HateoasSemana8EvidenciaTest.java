@@ -39,7 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class HateoasSemana8EvidenciaTest {
 
-    private static final Path EVIDENCIA_MD = Path.of("evidencia", "semana8", "resultados-validacion.md");
+    private static final Path EVIDENCIA_MD = Path.of("evidencia", "semana9", "resultados-hateoas-base.md");
 
     @Autowired
     private MockMvc mockMvc;
@@ -270,9 +270,9 @@ class HateoasSemana8EvidenciaTest {
 
                 ## Postman
 
-                - Importar: `postman/S8_01_OpenAPI_importar.json`
-                - Colección: `postman/S8_02_Coleccion_endpoints_hateoas.json`
-                - Consistencia: `postman/S8_CONSISTENCIA_swagger_postman.md`
+                - Importar: `postman/S9_01_OpenAPI_importar.json`
+                - Colección: `postman/S9_02_Coleccion_endpoints_EFT.json`
+                - Consistencia: `postman/S9_CONSISTENCIA_swagger_postman.md`
                 """;
         Files.writeString(EVIDENCIA_MD, contenido);
         assertThat(Files.exists(EVIDENCIA_MD)).isTrue();

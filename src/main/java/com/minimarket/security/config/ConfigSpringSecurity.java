@@ -77,6 +77,9 @@ public class ConfigSpringSecurity {
                         // Consulta de catálogo pública — disponibilidad de productos (caso MiniMarket Plus)
                         .requestMatchers(HttpMethod.GET, "/api/productos", "/api/productos/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categorias", "/api/categorias/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/sucursales", "/api/sucursales/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/promociones", "/api/promociones/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/stock-sucursal/disponibilidad/**").permitAll()
                         // Springdoc OpenAPI — documentación pública (Semana 7)
                         .requestMatchers(
                                 "/swagger-ui/**",
@@ -88,6 +91,8 @@ public class ConfigSpringSecurity {
                         .requestMatchers("/api/admin/**").hasRole("GERENTE")
                         // Inventario — personal de tienda
                         .requestMatchers("/api/inventario/**").hasAnyRole("EMPLEADO", "GERENTE")
+                        .requestMatchers("/api/ordenes-compra/**").hasAnyRole("EMPLEADO", "GERENTE")
+                        .requestMatchers("/api/reportes/**").hasAnyRole("EMPLEADO", "GERENTE")
                         // Eliminaciones — solo gerente
                         .requestMatchers(HttpMethod.DELETE, "/api/**").hasRole("GERENTE")
                         .anyRequest().authenticated())

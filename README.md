@@ -1,17 +1,16 @@
-# MiniMarket Plus — Backend Semana 6
+# MiniMarket Plus — Backend EFT Semana 9
 
-Backend REST de **MiniMarket Plus** con Spring Boot 3, autenticación JWT, control de acceso por roles (cliente / cajero / administrador), pruebas unitarias con JUnit 5 y Mockito, y cobertura JaCoCo.
+Backend REST de **MiniMarket Plus** con Spring Boot 3, gestión multi-sucursal, pedidos en línea, promociones, órdenes de compra automáticas, reportes de rotación, autenticación JWT, RBAC, OpenAPI, HATEOAS y pruebas unitarias con JaCoCo.
 
 ## Requisitos
 
 - Java 17+
 - Maven 3.9+
-- PowerShell (para script de pruebas secuenciales)
 
 ## Ejecución
 
 ```powershell
-cd Exp2_S6_Lisbeth_bilbao_Grupo_19
+cd EFT_S9_Lisbeth_Bilbao-Grupo_19
 .\mvnw.cmd spring-boot:run
 ```
 
@@ -25,68 +24,62 @@ La API queda disponible en `http://localhost:8080`.
 | empleado1  | empleado123  | Cajero          | ROLE_EMPLEADO    |
 | gerente1   | gerente123   | Administrador   | ROLE_GERENTE     |
 
-## Permisos por rol (Semana 6)
+## Nuevos módulos Semana 9 (EFT)
 
-| Operación | CLIENTE | EMPLEADO (cajero) | GERENTE (admin) |
-|-----------|---------|-------------------|-----------------|
-| Consultar catálogo (GET productos/categorías) | Sí (público) | Sí | Sí |
-| Gestionar carrito (autenticado) | Sí | Sí | Sí |
-| Registrar venta (`POST /api/ventas/registrar`) | No (403) | Sí | Sí |
-| Inventario (`/api/inventario/**`) | No (403) | Sí | Sí |
-| Crear/editar productos y categorías | No (403) | No (403) | Sí |
-| Eliminar recursos (`DELETE /api/**`) | No | No | Sí |
-| Gestión de usuarios | No | No | Sí |
+| Módulo | Endpoint base | Descripción |
+|--------|---------------|-------------|
+| Sucursales | `/api/sucursales` | CRUD de sucursales (GET público, mutaciones GERENTE) |
+| Stock sucursal | `/api/stock-sucursal` | Stock por sucursal y disponibilidad pública |
+| Promociones | `/api/promociones` | Ofertas centralizadas (GET público, CRUD GERENTE) |
+| Pedidos | `/api/pedidos` | Pedidos RETIRO/DESPACHO con descuento y stock por sucursal |
+| Órdenes de compra | `/api/ordenes-compra` | Generación automática y confirmación de recepción |
+| Reportes | `/api/reportes` | Rotación de productos (ventas + pedidos) |
 
-## Estructura del proyecto
+## Permisos destacados
 
-```
-src/main/java/com/minimarket/
-├── config/              # DataInitializer (roles, usuarios, catálogo demo)
-├── controller/          # REST controllers con @PreAuthorize
-├── dto/                 # DTOs request/response
-├── entity/              # Entidades JPA
-├── exception/           # GlobalExceptionHandler
-├── mapper/              # MapStruct
-├── security/            # JWT, MFA, rate limit, audit
-└── util/                # InputSanitizer (Jsoup XSS)
+| Operación | CLIENTE | EMPLEADO | GERENTE | Público |
+|-----------|---------|----------|---------|---------|
+| GET sucursales, promociones, disponibilidad | — | — | — | Sí |
+| Registrar pedido | Sí | Sí | Sí | No |
+| Actualizar estado pedido | No | Sí | Sí | No |
+| Stock sucursal (mutaciones) | No | Sí | Sí | No |
+| Órdenes de compra y reportes | No | Sí | Sí | No |
+| CRUD sucursales/promociones | No | No | Sí | — |
 
-src/test/java/com/minimarket/
-├── service/impl/        # Pruebas unitarias de negocio
-├── security/            # Pruebas de autenticación y autorización
-├── integration/         # Pruebas integración (venta, concurrencia stock)
-├── dto/                 # Validación de DTOs
-├── entity/              # Relaciones entre entidades
-└── support/             # TestFixtures centralizado
-```
+## Datos iniciales (DataInitializer)
 
-## Seguridad implementada
-
-- **JWT stateless** (JJWT 0.12.6, HMAC-SHA256) + refresh tokens
-- **RBAC**: `ConfigSpringSecurity` + `@PreAuthorize`
-- **MFA TOTP** para gerente
-- **Rate limiting** en `/api/auth/**` (Bucket4j)
-- **Bloqueo por intentos fallidos** persistente en BD
-- **XSS**: Jsoup en `InputSanitizer`
-- **DTOs + @Valid**: validación de entrada
+- 3 sucursales en Santiago (Providencia, Ñuñoa, Maipú)
+- Stock por producto repartido entre sucursales
+- 2 promociones activas
+- Semilla de sucursales solo si `sucursalRepository.count() == 0`
 
 ## Pruebas y cobertura
 
 ```powershell
-# Ejecutar todas las pruebas
 .\mvnw.cmd test
-
-# Pruebas + reporte JaCoCo + verificación de umbrales (≥80% bundle, ≥90% servicios clave)
 .\mvnw.cmd verify
 ```
 
-Reporte HTML: `target/site/jacoco/index.html`
+Reporte JaCoCo: `target/site/jacoco/index.html`
 
-Postman Semana 8:
-- Environment: `postman/S8_03_Environment_local.json`
-- Colección HATEOAS: `postman/S8_02_Coleccion_endpoints_hateoas.json`
-- OpenAPI: `postman/S8_01_OpenAPI_importar.json`
-- Guía: `postman/S8_GUIA_importar_y_probar.md`
+## Documentación API
 
-## Nota de producción
+- Swagger UI: `http://localhost:8080/swagger-ui/index.html`
+- OpenAPI: `http://localhost:8080/v3/api-docs`
 
-Cambiar `jwt.secret` por variable de entorno. No commitear secretos reales.
+## Postman (EFT Semana 9)
+
+| Archivo | Uso |
+|---------|-----|
+| `postman/S9_03_Environment_local.json` | Environment local |
+| `postman/S9_02_Coleccion_endpoints_EFT.json` | Colección HATEOAS + negocio |
+| `postman/S9_GUIA_importar_y_probar.md` | Orden exacto de pruebas |
+
+Ver también `postman/README.md`.
+
+## Evidencia
+
+Ver `evidencia/semana9/resultados-validacion.md` para resultados de validación EFT.
+
+**Comandos paso a paso para capturas** (Swagger, Postman HAL, tests, JaCoCo):  
+`evidencia/semana9/COMANDOS_CAPTURAS.md`

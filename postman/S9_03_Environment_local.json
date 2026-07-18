@@ -1,0 +1,27 @@
+{
+  "id": "eft-s9-minimarket-local",
+  "name": "MiniMarket Plus - Local (EFT Semana 9)",
+  "values": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "default", "enabled": true },
+    { "key": "usernameCliente", "value": "cliente1", "type": "default", "enabled": true },
+    { "key": "passwordCliente", "value": "cliente123", "type": "secret", "enabled": true },
+    { "key": "usernameEmpleado", "value": "empleado1", "type": "default", "enabled": true },
+    { "key": "passwordEmpleado", "value": "empleado123", "type": "secret", "enabled": true },
+    { "key": "usernameGerente", "value": "gerente1", "type": "default", "enabled": true },
+    { "key": "passwordGerente", "value": "gerente123", "type": "secret", "enabled": true },
+    { "key": "tokenCliente", "value": "", "type": "default", "enabled": true },
+    { "key": "tokenEmpleado", "value": "", "type": "default", "enabled": true },
+    { "key": "tokenGerente", "value": "", "type": "default", "enabled": true },
+    { "key": "productoId", "value": "1", "type": "default", "enabled": true },
+    { "key": "categoriaId", "value": "1", "type": "default", "enabled": true },
+    { "key": "clienteId", "value": "1", "type": "default", "enabled": true },
+    { "key": "empleadoId", "value": "2", "type": "default", "enabled": true },
+    { "key": "sucursalId", "value": "1", "type": "default", "enabled": true },
+    { "key": "pedidoId", "value": "", "type": "default", "enabled": true },
+    { "key": "ordenCompraId", "value": "", "type": "default", "enabled": true },
+    { "key": "promocionId", "value": "1", "type": "default", "enabled": true }
+  ],
+  "_postman_variable_scope": "environment",
+  "_postman_exported_at": "2026-07-15T21:40:00.000Z",
+  "_postman_exported_using": "Postman/11.0.0"
+}

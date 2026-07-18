@@ -3,20 +3,28 @@ package com.minimarket.config;
 import com.minimarket.entity.Categoria;
 import com.minimarket.entity.Inventario;
 import com.minimarket.entity.Producto;
+import com.minimarket.entity.Promocion;
 import com.minimarket.entity.Rol;
+import com.minimarket.entity.StockSucursal;
+import com.minimarket.entity.Sucursal;
 import com.minimarket.entity.Usuario;
 import com.minimarket.repository.CategoriaRepository;
 import com.minimarket.repository.InventarioRepository;
 import com.minimarket.repository.ProductoRepository;
+import com.minimarket.repository.PromocionRepository;
 import com.minimarket.repository.RolRepository;
+import com.minimarket.repository.StockSucursalRepository;
+import com.minimarket.repository.SucursalRepository;
 import com.minimarket.repository.UsuarioRepository;
 import com.minimarket.security.constants.SecurityRoles;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Component
@@ -27,6 +35,9 @@ public class DataInitializer implements CommandLineRunner {
     private final CategoriaRepository categoriaRepository;
     private final ProductoRepository productoRepository;
     private final InventarioRepository inventarioRepository;
+    private final SucursalRepository sucursalRepository;
+    private final StockSucursalRepository stockSucursalRepository;
+    private final PromocionRepository promocionRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DataInitializer(
@@ -35,12 +46,18 @@ public class DataInitializer implements CommandLineRunner {
             CategoriaRepository categoriaRepository,
             ProductoRepository productoRepository,
             InventarioRepository inventarioRepository,
+            SucursalRepository sucursalRepository,
+            StockSucursalRepository stockSucursalRepository,
+            PromocionRepository promocionRepository,
             PasswordEncoder passwordEncoder) {
         this.rolRepository = rolRepository;
         this.usuarioRepository = usuarioRepository;
         this.categoriaRepository = categoriaRepository;
         this.productoRepository = productoRepository;
         this.inventarioRepository = inventarioRepository;
+        this.sucursalRepository = sucursalRepository;
+        this.stockSucursalRepository = stockSucursalRepository;
+        this.promocionRepository = promocionRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -56,6 +73,10 @@ public class DataInitializer implements CommandLineRunner {
 
         if (categoriaRepository.count() == 0) {
             seedCatalogoMinimarket();
+        }
+
+        if (sucursalRepository.count() == 0) {
+            seedSucursalesYStock();
         }
     }
 
@@ -88,6 +109,75 @@ public class DataInitializer implements CommandLineRunner {
         registrarEntradaInventario(leche, 45);
         registrarEntradaInventario(detergente, 35);
         registrarEntradaInventario(shampoo, 40);
+    }
+
+    private void seedSucursalesYStock() {
+        Sucursal providencia = crearSucursal("MiniMarket Plus Providencia",
+                "Av. Providencia 1234", "Providencia");
+        Sucursal nunoa = crearSucursal("MiniMarket Plus Ñuñoa",
+                "Av. Grecia 567", "Ñuñoa");
+        Sucursal maipu = crearSucursal("MiniMarket Plus Maipú",
+                "Av. Pajaritos 890", "Maipú");
+
+        List<Sucursal> sucursales = List.of(providencia, nunoa, maipu);
+        List<Producto> productos = productoRepository.findAll();
+
+        for (Producto producto : productos) {
+            repartirStockEnSucursales(producto, sucursales);
+        }
+
+        crearPromocionActiva("Descuento Bebidas Verano", 10.0,
+                "10% en bebidas seleccionadas", productos.stream()
+                        .filter(p -> p.getNombre().contains("Bebida") || p.getNombre().contains("Agua"))
+                        .findFirst().orElse(productos.get(0)), null);
+
+        crearPromocionActiva("Oferta Sucursal Providencia", 15.0,
+                "15% en productos de abarrotes en Providencia", productos.get(0), providencia);
+    }
+
+    private void repartirStockEnSucursales(Producto producto, List<Sucursal> sucursales) {
+        int stockTotal = producto.getStock() != null ? producto.getStock() : 0;
+        int base = stockTotal / sucursales.size();
+        int resto = stockTotal % sucursales.size();
+        int stockMinimo = Math.max(5, base / 4);
+
+        for (int i = 0; i < sucursales.size(); i++) {
+            int cantidad = base + (i < resto ? 1 : 0);
+            StockSucursal stock = new StockSucursal();
+            stock.setProducto(producto);
+            stock.setSucursal(sucursales.get(i));
+            stock.setCantidad(cantidad);
+            stock.setStockMinimo(stockMinimo);
+            stockSucursalRepository.save(stock);
+        }
+    }
+
+    private Sucursal crearSucursal(String nombre, String direccion, String comuna) {
+        Sucursal sucursal = new Sucursal();
+        sucursal.setNombre(nombre);
+        sucursal.setDireccion(direccion);
+        sucursal.setComuna(comuna);
+        sucursal.setActiva(true);
+        return sucursalRepository.save(sucursal);
+    }
+
+    private void crearPromocionActiva(String nombre, double descuento, String descripcion,
+                                      Producto producto, Sucursal sucursal) {
+        Calendar cal = Calendar.getInstance();
+        Date inicio = cal.getTime();
+        cal.add(Calendar.MONTH, 3);
+        Date fin = cal.getTime();
+
+        Promocion promocion = new Promocion();
+        promocion.setNombre(nombre);
+        promocion.setDescripcion(descripcion);
+        promocion.setDescuentoPorcentaje(descuento);
+        promocion.setFechaInicio(inicio);
+        promocion.setFechaFin(fin);
+        promocion.setActiva(true);
+        promocion.setProducto(producto);
+        promocion.setSucursal(sucursal);
+        promocionRepository.save(promocion);
     }
 
     private Categoria crearCategoria(String nombre) {

@@ -11,7 +11,12 @@ import org.springframework.context.annotation.Import;
         VentaMapperImpl.class,
         InventarioMapperImpl.class,
         DetalleVentaMapperImpl.class,
-        CarritoMapperImpl.class
+        CarritoMapperImpl.class,
+        SucursalMapperImpl.class,
+        StockSucursalMapperImpl.class,
+        PromocionMapperImpl.class,
+        PedidoMapperImpl.class,
+        OrdenCompraMapperImpl.class
 })
 public class MapperTestConfiguration {
 }

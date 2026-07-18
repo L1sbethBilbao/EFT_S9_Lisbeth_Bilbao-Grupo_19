@@ -40,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class OpenApiSemana7EvidenciaTest {
 
-    private static final Path EVIDENCIA_MD = Path.of("evidencia", "semana7", "resultados-validacion.md");
+    private static final Path EVIDENCIA_MD = Path.of("evidencia", "semana9", "resultados-openapi-base.md");
 
     @Autowired
     private MockMvc mockMvc;
@@ -276,9 +276,9 @@ class OpenApiSemana7EvidenciaTest {
 
                 ## Postman
 
-                - Importar: `postman/S8_01_OpenAPI_importar.json` o `postman/S8_02_Coleccion_endpoints_hateoas.json`
+                - Importar: `postman/S9_01_OpenAPI_importar.json` o `postman/S9_02_Coleccion_endpoints_EFT.json`
                 - Login: `POST /api/auth/login` → pegar `accessToken` en Authorization Bearer
-                - Consistencia: ver `postman/S7_CONSISTENCIA_swagger_postman.md`
+                - Consistencia: ver `postman/S9_CONSISTENCIA_swagger_postman.md`
                 """;
         Files.writeString(EVIDENCIA_MD, contenido);
         assertThat(Files.exists(EVIDENCIA_MD)).isTrue();

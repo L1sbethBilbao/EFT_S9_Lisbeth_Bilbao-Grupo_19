@@ -5,6 +5,8 @@ import com.minimarket.repository.CategoriaRepository;
 import com.minimarket.service.CategoriaService;
 import com.minimarket.util.InputSanitizer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,6 +25,14 @@ public class CategoriaServiceImpl implements CategoriaService {
         return categoriaRepository.findAll().stream()
                 .peek(this::sanitizeForOutput)
                 .toList();
+    }
+
+    @Override
+    public Page<Categoria> findAll(Pageable pageable) {
+        return categoriaRepository.findAll(pageable).map(categoria -> {
+            sanitizeForOutput(categoria);
+            return categoria;
+        });
     }
 
     @Override

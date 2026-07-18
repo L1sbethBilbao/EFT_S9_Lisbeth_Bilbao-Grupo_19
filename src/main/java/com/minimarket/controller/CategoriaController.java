@@ -2,6 +2,7 @@ package com.minimarket.controller;
 
 import com.minimarket.dto.categoria.CategoriaRequestDTO;
 import com.minimarket.dto.categoria.CategoriaResponseDTO;
+import com.minimarket.hateoas.CategoriaModelAssembler;
 import com.minimarket.mapper.CategoriaMapper;
 import com.minimarket.security.constants.SecurityExpressions;
 import com.minimarket.service.CategoriaService;
@@ -13,12 +14,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Tag(name = "Categorías", description = "Clasificación de productos del catálogo")
 @RestController
@@ -31,12 +36,18 @@ public class CategoriaController {
     @Autowired
     private CategoriaMapper categoriaMapper;
 
-    @Operation(summary = "Listar categorías", description = "Consulta pública de categorías")
-    @ApiResponses(@ApiResponse(responseCode = "200", description = "Lista de categorías"))
+    @Autowired
+    private CategoriaModelAssembler categoriaModelAssembler;
+
+    @Operation(summary = "Listar categorías", description = "Consulta pública paginada con HATEOAS")
+    @ApiResponses(@ApiResponse(responseCode = "200", description = "Página de categorías"))
     @SecurityRequirements
     @GetMapping
-    public List<CategoriaResponseDTO> listarCategorias() {
-        return categoriaMapper.toResponseList(categoriaService.findAll());
+    public PagedModel<EntityModel<CategoriaResponseDTO>> listarCategorias(
+            @ParameterObject Pageable pageable,
+            PagedResourcesAssembler<CategoriaResponseDTO> pagedAssembler) {
+        Page<CategoriaResponseDTO> page = categoriaService.findAll(pageable).map(categoriaMapper::toResponse);
+        return pagedAssembler.toModel(page, categoriaModelAssembler);
     }
 
     @Operation(summary = "Obtener categoría por ID")
@@ -46,10 +57,11 @@ public class CategoriaController {
     })
     @SecurityRequirements
     @GetMapping("/{id}")
-    public ResponseEntity<CategoriaResponseDTO> obtenerCategoriaPorId(
+    public ResponseEntity<EntityModel<CategoriaResponseDTO>> obtenerCategoriaPorId(
             @Parameter(description = "ID de la categoría", example = "1") @PathVariable Long id) {
         var categoria = categoriaService.findById(id);
-        return (categoria != null) ? ResponseEntity.ok(categoriaMapper.toResponse(categoria))
+        return (categoria != null)
+                ? ResponseEntity.ok(categoriaModelAssembler.toModel(categoriaMapper.toResponse(categoria)))
                 : ResponseEntity.notFound().build();
     }
 
@@ -62,8 +74,10 @@ public class CategoriaController {
     })
     @PostMapping
     @PreAuthorize(SecurityExpressions.SOLO_GERENTE)
-    public CategoriaResponseDTO guardarCategoria(@Valid @RequestBody CategoriaRequestDTO categoriaDto) {
-        return categoriaMapper.toResponse(categoriaService.save(categoriaMapper.toEntity(categoriaDto)));
+    public EntityModel<CategoriaResponseDTO> guardarCategoria(@Valid @RequestBody CategoriaRequestDTO categoriaDto) {
+        CategoriaResponseDTO response = categoriaMapper.toResponse(
+                categoriaService.save(categoriaMapper.toEntity(categoriaDto)));
+        return categoriaModelAssembler.toModel(response);
     }
 
     @Operation(summary = "Actualizar categoría", description = "Solo rol GERENTE")
@@ -76,14 +90,15 @@ public class CategoriaController {
     })
     @PutMapping("/{id}")
     @PreAuthorize(SecurityExpressions.SOLO_GERENTE)
-    public ResponseEntity<CategoriaResponseDTO> actualizarCategoria(
+    public ResponseEntity<EntityModel<CategoriaResponseDTO>> actualizarCategoria(
             @Parameter(description = "ID de la categoría", example = "1") @PathVariable Long id,
             @Valid @RequestBody CategoriaRequestDTO categoriaDto) {
         var categoriaExistente = categoriaService.findById(id);
         if (categoriaExistente != null) {
             categoriaDto.setId(id);
-            return ResponseEntity.ok(categoriaMapper.toResponse(
-                    categoriaService.save(categoriaMapper.toEntity(categoriaDto))));
+            CategoriaResponseDTO response = categoriaMapper.toResponse(
+                    categoriaService.save(categoriaMapper.toEntity(categoriaDto)));
+            return ResponseEntity.ok(categoriaModelAssembler.toModel(response));
         }
         return ResponseEntity.notFound().build();
     }

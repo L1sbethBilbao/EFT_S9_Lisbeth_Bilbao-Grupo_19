@@ -3,12 +3,18 @@ package com.minimarket.config;
 import com.minimarket.entity.Categoria;
 import com.minimarket.entity.Inventario;
 import com.minimarket.entity.Producto;
+import com.minimarket.entity.Promocion;
 import com.minimarket.entity.Rol;
+import com.minimarket.entity.StockSucursal;
+import com.minimarket.entity.Sucursal;
 import com.minimarket.entity.Usuario;
 import com.minimarket.repository.CategoriaRepository;
 import com.minimarket.repository.InventarioRepository;
 import com.minimarket.repository.ProductoRepository;
+import com.minimarket.repository.PromocionRepository;
 import com.minimarket.repository.RolRepository;
+import com.minimarket.repository.StockSucursalRepository;
+import com.minimarket.repository.SucursalRepository;
 import com.minimarket.repository.UsuarioRepository;
 import com.minimarket.security.constants.SecurityRoles;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +29,7 @@ import org.mockito.quality.Strictness;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,6 +61,15 @@ class DataInitializerTest {
     private InventarioRepository inventarioRepository;
 
     @Mock
+    private SucursalRepository sucursalRepository;
+
+    @Mock
+    private StockSucursalRepository stockSucursalRepository;
+
+    @Mock
+    private PromocionRepository promocionRepository;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
     @InjectMocks
@@ -77,6 +93,12 @@ class DataInitializerTest {
         stubRolesNuevos();
         when(usuarioRepository.findByUsername(anyString())).thenReturn(Optional.empty());
         when(categoriaRepository.count()).thenReturn(0L);
+        when(sucursalRepository.count()).thenReturn(0L);
+        Producto productoDemo = new Producto();
+        productoDemo.setNombre("Arroz grano largo 1kg");
+        productoDemo.setPrecio(1890.0);
+        productoDemo.setStock(30);
+        when(productoRepository.findAll()).thenReturn(List.of(productoDemo));
 
         dataInitializer.run();
 
@@ -84,6 +106,9 @@ class DataInitializerTest {
         verify(categoriaRepository, times(5)).save(any(Categoria.class));
         verify(productoRepository, times(7)).save(any(Producto.class));
         verify(inventarioRepository, times(7)).save(any(Inventario.class));
+        verify(sucursalRepository, times(3)).save(any(Sucursal.class));
+        verify(stockSucursalRepository, times(3)).save(any(StockSucursal.class));
+        verify(promocionRepository, times(2)).save(any(Promocion.class));
     }
 
     @Test
@@ -93,6 +118,7 @@ class DataInitializerTest {
         stubRolesNuevos();
         when(usuarioRepository.findByUsername(anyString())).thenReturn(Optional.empty());
         when(categoriaRepository.count()).thenReturn(3L);
+        when(sucursalRepository.count()).thenReturn(1L);
 
         dataInitializer.run();
 
@@ -111,6 +137,7 @@ class DataInitializerTest {
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
         when(passwordEncoder.encode(anyString())).thenReturn("encoded");
         when(categoriaRepository.count()).thenReturn(1L);
+        when(sucursalRepository.count()).thenReturn(1L);
 
         dataInitializer.run();
 
@@ -130,6 +157,7 @@ class DataInitializerTest {
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
         when(passwordEncoder.encode(anyString())).thenReturn("encoded");
         when(categoriaRepository.count()).thenReturn(1L);
+        when(sucursalRepository.count()).thenReturn(1L);
 
         dataInitializer.run();
 
@@ -159,6 +187,7 @@ class DataInitializerTest {
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
         when(passwordEncoder.encode(anyString())).thenReturn("encoded");
         when(categoriaRepository.count()).thenReturn(1L);
+        when(sucursalRepository.count()).thenReturn(1L);
 
         dataInitializer.run();
 
@@ -205,6 +234,9 @@ class DataInitializerTest {
         when(categoriaRepository.save(any(Categoria.class))).thenAnswer(inv -> inv.getArgument(0));
         when(productoRepository.save(any(Producto.class))).thenAnswer(inv -> inv.getArgument(0));
         when(inventarioRepository.save(any(Inventario.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(sucursalRepository.save(any(Sucursal.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(stockSucursalRepository.save(any(StockSucursal.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(promocionRepository.save(any(Promocion.class))).thenAnswer(inv -> inv.getArgument(0));
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
         when(passwordEncoder.encode(anyString())).thenReturn("encoded");
     }

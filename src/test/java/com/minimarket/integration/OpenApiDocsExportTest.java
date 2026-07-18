@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class OpenApiDocsExportTest {
 
-    private static final Path EXPORT_PATH = Path.of("postman", "S8_01_OpenAPI_importar.json");
+    private static final Path EXPORT_PATH = Path.of("postman", "S9_01_OpenAPI_importar.json");
 
     @Autowired
     private MockMvc mockMvc;

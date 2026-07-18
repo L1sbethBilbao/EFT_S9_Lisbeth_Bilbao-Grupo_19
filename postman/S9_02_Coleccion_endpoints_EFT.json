@@ -1,0 +1,714 @@
+{
+  "info": {
+    "_postman_id": "eft-s9-coleccion-completa",
+    "name": "EFT Semana 9 — HATEOAS + Negocio MiniMarket Plus",
+    "description": "Colección EFT Semana 9.\n\n**Orden de ejecución (resumen):**\n1. Importar environment `S9_03_Environment_local.json`\n2. Carpeta 00 — Logins (S00, S00b, S00c)\n3. Carpeta 01 — HATEOAS base H01–H09 (**H05 antes de H04**)\n4. Carpeta 02 — HATEOAS S9 (categorías, ventas, sucursales, promociones)\n5. Carpeta 03 — Negocio S9 (disponibilidad, pedido, órdenes, reportes)\n\nGuía: `S9_GUIA_importar_y_probar.md`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "tokenGerente", "value": "" },
+    { "key": "tokenCliente", "value": "" },
+    { "key": "tokenEmpleado", "value": "" },
+    { "key": "productoId", "value": "1" },
+    { "key": "clienteId", "value": "1" },
+    { "key": "sucursalId", "value": "1" },
+    { "key": "pedidoId", "value": "" },
+    { "key": "ordenCompraId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "00 — Logins",
+      "item": [
+        {
+          "name": "S00 — Login GERENTE → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Login gerente → 200 OK', () => pm.response.to.have.status(200));",
+                "const t = pm.response.json().accessToken;",
+                "pm.collectionVariables.set('tokenGerente', t);",
+                "pm.environment.set('tokenGerente', t);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"username\":\"gerente1\",\"password\":\"gerente123\"}" },
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Login GERENTE → guarda tokenGerente"
+          }
+        },
+        {
+          "name": "S00b — Login CLIENTE → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Login cliente → 200 OK', () => pm.response.to.have.status(200));",
+                "const t = pm.response.json().accessToken;",
+                "pm.collectionVariables.set('tokenCliente', t);",
+                "pm.environment.set('tokenCliente', t);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"username\":\"cliente1\",\"password\":\"cliente123\"}" },
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Login CLIENTE → guarda tokenCliente"
+          }
+        },
+        {
+          "name": "S00c — Login EMPLEADO → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Login empleado → 200 OK', () => pm.response.to.have.status(200));",
+                "const t = pm.response.json().accessToken;",
+                "pm.collectionVariables.set('tokenEmpleado', t);",
+                "pm.environment.set('tokenEmpleado', t);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"username\":\"empleado1\",\"password\":\"empleado123\"}" },
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Login EMPLEADO → guarda tokenEmpleado"
+          }
+        }
+      ]
+    },
+    {
+      "name": "01 — HATEOAS base (H01–H09)",
+      "description": "Evidencias HATEOAS de Semana 8. **Ejecutar H05 antes de H04.**",
+      "item": [
+        {
+          "name": "H01 GET productos paginado (público) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('H01 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('H01 _embedded', () => pm.expect(j._embedded).to.exist);",
+                "pm.test('H01 page.size=5', () => pm.expect(j.page.size).to.eql(5));",
+                "pm.test('H01 _links.self', () => pm.expect(j._links.self.href).to.be.a('string'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/productos?page=0&size=5"
+          }
+        },
+        {
+          "name": "H02 GET producto por id (público) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('H02 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('H02 _links.self', () => pm.expect(j._links.self.href).to.include('/api/productos/'));",
+                "pm.test('H02 _links.productos', () => pm.expect(j._links.productos.href).to.include('/api/productos'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/productos/{{productoId}}"
+          }
+        },
+        {
+          "name": "H03 POST producto (GERENTE) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('H03 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('H03 _links.self', () => pm.expect(j._links.self.href).to.be.a('string'));",
+                "pm.test('H03 id', () => pm.expect(j.id).to.be.a('number'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenGerente}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"Producto HATEOAS S9\",\"precio\":1200,\"stock\":5,\"descripcion\":\"Evidencia Postman S9\",\"categoria\":{\"id\":1}}"
+            },
+            "url": "{{baseUrl}}/api/productos"
+          }
+        },
+        {
+          "name": "H05 POST carrito (CLIENTE) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('H05 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('H05 _links.self', () => pm.expect(j._links.self.href).to.be.a('string'));",
+                "pm.test('H05 _links.carrito', () => pm.expect(j._links.carrito.href).to.include('/api/carrito'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenCliente}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"usuario\":{\"id\":{{clienteId}}},\"producto\":{\"id\":{{productoId}}},\"cantidad\":1}"
+            },
+            "url": "{{baseUrl}}/api/carrito",
+            "description": "Ejecutar ANTES de H04"
+          }
+        },
+        {
+          "name": "H04 GET carrito paginado (CLIENTE) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('H04 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('H04 _embedded', () => pm.expect(j._embedded).to.exist);",
+                "pm.test('H04 page', () => pm.expect(j.page).to.exist);",
+                "pm.test('H04 _links.self', () => pm.expect(j._links.self.href).to.be.a('string'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" }],
+            "url": "{{baseUrl}}/api/carrito?page=0&size=5",
+            "description": "Ejecutar DESPUÉS de H05"
+          }
+        },
+        {
+          "name": "H06 GET inventario paginado (EMPLEADO) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('H06 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('H06 _embedded', () => pm.expect(j._embedded).to.exist);",
+                "pm.test('H06 page.totalElements', () => pm.expect(j.page.totalElements).to.be.a('number'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenEmpleado}}" }],
+            "url": "{{baseUrl}}/api/inventario?page=0&size=5"
+          }
+        },
+        {
+          "name": "H07 POST inventario (EMPLEADO) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('H07 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('H07 _links.self', () => pm.expect(j._links.self.href).to.be.a('string'));",
+                "pm.test('H07 _links.inventario', () => pm.expect(j._links.inventario.href).to.include('/api/inventario'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenEmpleado}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"producto\":{\"id\":{{productoId}}},\"cantidad\":2,\"tipoMovimiento\":\"Entrada\"}"
+            },
+            "url": "{{baseUrl}}/api/inventario"
+          }
+        },
+        {
+          "name": "H08 GET usuarios paginado (GERENTE) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('H08 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('H08 _embedded', () => pm.expect(j._embedded).to.exist);",
+                "pm.test('H08 page.size=5', () => pm.expect(j.page.size).to.eql(5));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenGerente}}" }],
+            "url": "{{baseUrl}}/api/usuarios?page=0&size=5"
+          }
+        },
+        {
+          "name": "H09 GET usuario por id (GERENTE) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('H09 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('H09 _links.self', () => pm.expect(j._links.self.href).to.include('/api/usuarios/'));",
+                "pm.test('H09 _links.usuarios', () => pm.expect(j._links.usuarios.href).to.include('/api/usuarios'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenGerente}}" }],
+            "url": "{{baseUrl}}/api/usuarios/{{clienteId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 — HATEOAS S9 (nuevos módulos)",
+      "description": "HATEOAS extendido: categorías, ventas, sucursales, promociones, stock.",
+      "item": [
+        {
+          "name": "H10 GET categorias paginado (público) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('H10 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('H10 _links.self', () => pm.expect(j._links.self.href).to.be.a('string'));",
+                "pm.test('H10 page', () => pm.expect(j.page).to.exist);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/categorias?page=0&size=5"
+          }
+        },
+        {
+          "name": "H11 GET ventas paginado (CLIENTE) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('H11 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('H11 _links.self', () => pm.expect(j._links.self.href).to.be.a('string'));",
+                "pm.test('H11 page', () => pm.expect(j.page).to.exist);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" }],
+            "url": "{{baseUrl}}/api/ventas?page=0&size=5"
+          }
+        },
+        {
+          "name": "H12 GET sucursales paginado (público) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('H12 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('H12 _embedded', () => pm.expect(j._embedded).to.exist);",
+                "pm.test('H12 _links.self', () => pm.expect(j._links.self.href).to.include('/api/sucursales'));",
+                "const list = j._embedded.sucursalResponseDTOList || Object.values(j._embedded)[0];",
+                "if (list && list[0] && list[0].id) {",
+                "  pm.collectionVariables.set('sucursalId', String(list[0].id));",
+                "  pm.environment.set('sucursalId', String(list[0].id));",
+                "}"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/sucursales?page=0&size=5"
+          }
+        },
+        {
+          "name": "H13 GET sucursal por id (público) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('H13 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('H13 _links.self', () => pm.expect(j._links.self.href).to.include('/api/sucursales/'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/sucursales/{{sucursalId}}"
+          }
+        },
+        {
+          "name": "H14 GET promociones paginado (público) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('H14 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('H14 _links.self', () => pm.expect(j._links.self.href).to.include('/api/promociones'));",
+                "pm.test('H14 page', () => pm.expect(j.page).to.exist);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/promociones?page=0&size=5"
+          }
+        },
+        {
+          "name": "H15 GET stock-sucursal paginado (EMPLEADO) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('H15 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('H15 _embedded', () => pm.expect(j._embedded).to.exist);",
+                "pm.test('H15 page', () => pm.expect(j.page).to.exist);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenEmpleado}}" }],
+            "url": "{{baseUrl}}/api/stock-sucursal?page=0&size=5"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 — Negocio S9 (caso MiniMarket Plus)",
+      "description": "Flujo de negocio: disponibilidad → pedido RETIRO/DESPACHO → órdenes compra → reportes.",
+      "item": [
+        {
+          "name": "N01 GET disponibilidad por sucursal (público) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('N01 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('N01 es array', () => pm.expect(j).to.be.an('array'));",
+                "pm.test('N01 tiene productos', () => pm.expect(j.length).to.be.above(0));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/stock-sucursal/disponibilidad/{{sucursalId}}",
+            "description": "Disponibilidad de productos en una sucursal (requisito del caso)"
+          }
+        },
+        {
+          "name": "N02 GET promociones activas (público) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('N02 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('N02 es array', () => pm.expect(j).to.be.an('array'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/promociones/activas"
+          }
+        },
+        {
+          "name": "N03 POST pedido RETIRO (CLIENTE) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('N03 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('N03 id', () => pm.expect(j.id).to.be.a('number'));",
+                "pm.test('N03 tipoEntrega RETIRO', () => pm.expect(j.tipoEntrega).to.eql('RETIRO'));",
+                "pm.test('N03 _links.self', () => pm.expect(j._links.self.href).to.include('/api/pedidos/'));",
+                "pm.collectionVariables.set('pedidoId', String(j.id));",
+                "pm.environment.set('pedidoId', String(j.id));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenCliente}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": {{clienteId}},\n  \"sucursalId\": {{sucursalId}},\n  \"tipoEntrega\": \"RETIRO\",\n  \"items\": [\n    { \"productoId\": {{productoId}}, \"cantidad\": 2 }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/api/pedidos/registrar",
+            "description": "Pedido retiro en tienda. Descuenta stock de sucursal y aplica promociones."
+          }
+        },
+        {
+          "name": "N04 POST pedido DESPACHO (CLIENTE) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('N04 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('N04 tipoEntrega DESPACHO', () => pm.expect(j.tipoEntrega).to.eql('DESPACHO'));",
+                "pm.test('N04 direccion', () => pm.expect(j.direccionEntrega).to.be.a('string'));",
+                "pm.test('N04 _links.self', () => pm.expect(j._links.self.href).to.be.a('string'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenCliente}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": {{clienteId}},\n  \"sucursalId\": {{sucursalId}},\n  \"tipoEntrega\": \"DESPACHO\",\n  \"direccionEntrega\": \"Av. Providencia 1234, Santiago\",\n  \"items\": [\n    { \"productoId\": {{productoId}}, \"cantidad\": 1 }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/api/pedidos/registrar",
+            "description": "Pedido con despacho a domicilio"
+          }
+        },
+        {
+          "name": "N05 GET pedidos paginado (CLIENTE) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('N05 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('N05 _embedded', () => pm.expect(j._embedded).to.exist);",
+                "pm.test('N05 page', () => pm.expect(j.page).to.exist);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" }],
+            "url": "{{baseUrl}}/api/pedidos?page=0&size=5"
+          }
+        },
+        {
+          "name": "N06 PATCH estado pedido (EMPLEADO) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('N06 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('N06 estado CONFIRMADO', () => pm.expect(j.estado).to.eql('CONFIRMADO'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenEmpleado}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"estado\":\"CONFIRMADO\"}"
+            },
+            "url": "{{baseUrl}}/api/pedidos/{{pedidoId}}/estado",
+            "description": "Requiere pedidoId de N03. Estados: PENDIENTE, CONFIRMADO, EN_CAMINO, ENTREGADO, CANCELADO"
+          }
+        },
+        {
+          "name": "N07 POST generar órdenes automáticas (EMPLEADO) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('N07 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('N07 es array', () => pm.expect(j).to.be.an('array'));",
+                "if (j.length > 0) {",
+                "  const id = j[0].id;",
+                "  pm.collectionVariables.set('ordenCompraId', String(id));",
+                "  pm.environment.set('ordenCompraId', String(id));",
+                "  pm.test('N07 tiene _links', () => pm.expect(j[0]._links.self.href).to.be.a('string'));",
+                "} else {",
+                "  console.log('Sin stock bajo mínimo: array vacío es válido');",
+                "}"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenEmpleado}}" }],
+            "url": "{{baseUrl}}/api/ordenes-compra/generar-automaticas",
+            "description": "Genera órdenes si stock <= stockMinimo. Tras N03/N04 es más probable que haya resultados."
+          }
+        },
+        {
+          "name": "N08 GET órdenes de compra (EMPLEADO) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('N08 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('N08 _links.self', () => pm.expect(j._links.self.href).to.include('/api/ordenes-compra'));",
+                "pm.test('N08 page', () => pm.expect(j.page).to.exist);",
+                "if (j._embedded) {",
+                "  const list = j._embedded.ordenCompraResponseDTOList || Object.values(j._embedded)[0];",
+                "  if (list && list[0] && list[0].id && !pm.collectionVariables.get('ordenCompraId')) {",
+                "    pm.collectionVariables.set('ordenCompraId', String(list[0].id));",
+                "    pm.environment.set('ordenCompraId', String(list[0].id));",
+                "  }",
+                "}"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenEmpleado}}" }],
+            "url": "{{baseUrl}}/api/ordenes-compra?page=0&size=5"
+          }
+        },
+        {
+          "name": "N09 POST confirmar recepción orden (EMPLEADO) → 200 OK",
+          "event": [{
+            "listen": "prerequest",
+            "script": {
+              "exec": [
+                "const id = pm.collectionVariables.get('ordenCompraId') || pm.environment.get('ordenCompraId');",
+                "if (!id) { console.warn('ordenCompraId vacío: ejecuta N07/N08 primero o fuerza stock bajo mínimo'); }"
+              ],
+              "type": "text/javascript"
+            }
+          }, {
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const id = pm.collectionVariables.get('ordenCompraId') || pm.environment.get('ordenCompraId');",
+                "if (!id) {",
+                "  pm.test('N09 omitido (sin ordenCompraId)', () => pm.expect(true).to.be.true);",
+                "} else {",
+                "  pm.test('N09 → 200 OK', () => pm.response.to.have.status(200));",
+                "  const j = pm.response.json();",
+                "  pm.test('N09 estado RECIBIDA', () => pm.expect(j.estado).to.eql('RECIBIDA'));",
+                "}"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenEmpleado}}" }],
+            "url": "{{baseUrl}}/api/ordenes-compra/{{ordenCompraId}}/confirmar-recepcion",
+            "description": "Incrementa stock en sucursal. Requiere ordenCompraId de N07/N08."
+          }
+        },
+        {
+          "name": "N10 GET reporte rotación productos (EMPLEADO) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('N10 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('N10 es array', () => pm.expect(j).to.be.an('array'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenEmpleado}}" }],
+            "url": "{{baseUrl}}/api/reportes/rotacion-productos",
+            "description": "Más/menos vendidos (ventas + pedidos)"
+          }
+        },
+        {
+          "name": "N11 POST promoción (GERENTE) → 200 OK",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('N11 → 200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('N11 _links.self', () => pm.expect(j._links.self.href).to.include('/api/promociones/'));",
+                "pm.test('N11 descuento', () => pm.expect(j.descuentoPorcentaje).to.eql(15));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenGerente}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Promo Postman S9\",\n  \"descripcion\": \"Descuento de evidencia EFT\",\n  \"descuentoPorcentaje\": 15,\n  \"fechaInicio\": \"2026-01-01T00:00:00.000Z\",\n  \"fechaFin\": \"2026-12-31T23:59:59.000Z\",\n  \"activa\": true,\n  \"producto\": { \"id\": 1 },\n  \"sucursal\": { \"id\": 1 }\n}"
+            },
+            "url": "{{baseUrl}}/api/promociones"
+          }
+        }
+      ]
+    }
+  ]
+}

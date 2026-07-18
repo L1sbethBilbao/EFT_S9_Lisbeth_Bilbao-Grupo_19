@@ -1,10 +1,14 @@
 package com.minimarket.support;
 
+import com.minimarket.dto.pedido.PedidoItemDTO;
+import com.minimarket.dto.pedido.PedidoRegistroDTO;
 import com.minimarket.dto.venta.VentaItemDTO;
 import com.minimarket.dto.venta.VentaRegistroDTO;
 import com.minimarket.entity.Inventario;
 import com.minimarket.entity.Producto;
 import com.minimarket.entity.Rol;
+import com.minimarket.entity.StockSucursal;
+import com.minimarket.entity.Sucursal;
 import com.minimarket.entity.Usuario;
 import com.minimarket.security.constants.SecurityRoles;
 
@@ -113,6 +117,42 @@ public final class TestFixtures {
         inventario.setTipoMovimiento("Salida");
         inventario.setFechaMovimiento(Date.from(FECHA_FIJA));
         return inventario;
+    }
+
+    public static Sucursal sucursal(long id, String nombre, String comuna) {
+        Sucursal sucursal = new Sucursal();
+        sucursal.setId(id);
+        sucursal.setNombre(nombre);
+        sucursal.setDireccion("Av. Test 100");
+        sucursal.setComuna(comuna);
+        sucursal.setActiva(true);
+        return sucursal;
+    }
+
+    public static Sucursal sucursalProvidencia() {
+        return sucursal(1L, "MiniMarket Plus Providencia", "Providencia");
+    }
+
+    public static StockSucursal stockSucursal(Producto producto, Sucursal sucursal, int cantidad, int minimo) {
+        StockSucursal stock = new StockSucursal();
+        stock.setId(1L);
+        stock.setProducto(producto);
+        stock.setSucursal(sucursal);
+        stock.setCantidad(cantidad);
+        stock.setStockMinimo(minimo);
+        return stock;
+    }
+
+    public static PedidoRegistroDTO pedidoRegistro(long usuarioId, long sucursalId, long productoId, int cantidad) {
+        PedidoRegistroDTO dto = new PedidoRegistroDTO();
+        dto.setUsuarioId(usuarioId);
+        dto.setSucursalId(sucursalId);
+        dto.setTipoEntrega("RETIRO");
+        PedidoItemDTO item = new PedidoItemDTO();
+        item.setProductoId(productoId);
+        item.setCantidad(cantidad);
+        dto.setItems(List.of(item));
+        return dto;
     }
 
     private TestFixtures() {
